@@ -1,0 +1,5 @@
+reducer <=> seState
+action <=> giá trị mới của state
+store <=> là cái kho chứa các state
+dispath <=> handle sự kiện để thay đổi (vd như click, change,...) - > hàm này ném sự kiện về cho store
+crud

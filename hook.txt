@@ -1,0 +1,250 @@
+React Hook:
+- Hook m
+
+
+
+1.useState: 
+- Dùng khi muốn thay đổi thì giao diện tự động render lại theo dữ liệu mình vừa cập nhật
+
+- cách sử dụng
+ 
+const [state,setState] = useState(initState)
+ sử dụng setState truyền vào là một callback
+ - thay đổi liên tiếp state 
+setState(()=>{
+   	
+})
+
+ sử dụng initState truyền vào là callback thì nó lấy giá trị return là initValue
+
+* nó thay thế giá trị mới chứ không thêm 1 giá trị mới (sử dụng toán tử spread để thêm)
+
+
+2.useEffect
+useEffect(callback,[deps]);
+
+- luôn được gọi lại sau khi componenet mounted
+1. ko có deps
+- gọi callback mỗi khi component re-render
+- gọi callback sau khi component element vào DOM  
+2. khi có deps là rỗng
+- chỉ gọi callback 1 lần sau khi component mount
+3, khi có deps
+- call back đc gọi lại khi deps thay đổi , deps có thể là biến , có thể là state...
+
+thêm avatar để áp dụng cleanup function (khi mà useEffect return)
+
+function Content() {
+
+const [avatar,setAvatar] = useState();
+
+useEffect(()=>{
+    return ()=>{
+       avatar && URL.revokeObjectURL(avatar.preview);
+    }
+},[avatar])
+
+  const handlePreviewAvatar = (e)=>{
+    const file = e.target.files[0]
+    file.preview = URL.createObjectURL(file)
+    setAvatar(file)
+  }
+
+  return (
+        <div>
+            <input type="file" onChange={handlePreviewAvatar} />
+            {avatar && <img src={avatar.preview} alt="" width="80%"/>}        
+        </div>
+  )
+}
+
+
+
+3. useLayoutEffect <=> giống useEffect
+  useEffect
+1.Cập nhật lại state
+2.Cập nhật DOM
+3.Render lại UI
+4.Gọi cleanup nếu deps thay đổi
+5.Gọi useEffect callback
+
+  useLayoutEffect
+1.Cập nhật lại state
+2.Cập nhật DOM
+3.Gọi cleanup nếu deps thay đổi
+4.Gọi useEffect callback
+5.Render lại UI
+
+
+4. useRef
+đưa 1 giá trị ra khỏi hàm khi mà render lại component thì ko bị thanh đổi giá trị
+
+const name = useRef(giá trị khởi tạo(có hoặc không tùy))
+
+name.current để lấy ra value của useRef
+
+const h1Reft = useRef()
+
+<h1 ref={h1Reft}>Hello<h1>
+
+muốn lấy tọa đổ element = h1Reft.current.getBoundingClientRect();
+
+5. useCallBack
+memo kiểm tra xem component có prop nào thay đổi ko thì nó mới cho re-render lại component
+
+useCallBack(callback,[deps])
+
+nó sẽ tham chiếu hàm callback của mình vào tham chiếu nằm ngoài phạm vi component
+lưu ý: sử dụng useCallback khi có memo
+
+6. useMemo
+
+
+7. useReducer
+
+1. init state : khởi tạo giá trị
+2. tạo action 
+3. reducer
+4. dispatch
+
+tăng đếm số
+const initState = 0;
+
+const UP_ACTION = 'up
+const DOWN_ACTION = 'down'
+
+const reducer = (state,action) =>{
+	switch(action){
+		case UP_ACTION:
+			return state + 1
+		case DOWN_ACTION:
+			return state - 1
+		defaule:
+			throw new Error('Invalid action')	
+}
+
+const [count,dispatch] = useReducer(reducer,initState)
+
+dispatch(UP_ACTION)
+dispatch(DOWN_ACTION)
+
+
+thêm ,sửa, xóa todo list với reducer
+import React,{useState,useEffect,useReducer,useRef} from 'react'
+
+//initState
+const initialValue = {
+    job: '',
+    jobs: ['viec nha']
+}
+
+//action
+const SET_JOB = 'set_job'
+const ADD_JOB = 'add_job'
+const DELETE_JOB = 'delete_job'
+const UPDATE_JOB = 'update_job'
+
+const setJob = (payload)=>{
+  return {
+    type: SET_JOB,
+    payload
+  }
+}
+
+const addJob = (payload)=>{
+  return {
+    type: ADD_JOB,
+    payload
+  }
+}
+
+const removeJob = (payload)=>{
+  return {
+    type: DELETE_JOB,
+    payload
+  }
+}
+
+const updateJob = (payload)=>{
+  return {
+    type: UPDATE_JOB,
+    payload
+  }
+}
+
+//reducer
+
+const reducer = (state,action) =>{
+  switch(action.type){
+      case SET_JOB:
+        return {
+          ...state,
+          job: action.payload
+        }
+      case ADD_JOB:
+          return {
+            ...state,
+            jobs: [...state.jobs,action.payload]
+          }
+      case DELETE_JOB:  
+          const newJobs = [...state.jobs]   
+          newJobs.splice(action.payload,1)
+          return {
+            ...state,
+            jobs: newJobs 
+          }
+      case UPDATE_JOB:  
+          const newUpdateJobs = [...state.jobs]   
+          newUpdateJobs.splice(action.payload,1,state.job)
+          return {
+            ...state,
+            jobs: newUpdateJobs 
+          }        
+      default:
+          throw new Error(`Invalid action ${action.type}`)  
+  }
+  
+    
+}
+
+
+function Content() {
+  const [state,dispatch] = useReducer(reducer,initialValue)
+  const inputRef = useRef();
+  const handleSubmit =()=>{
+    dispatch(addJob(state.job))
+    dispatch(setJob(''))
+    inputRef.current.focus()
+  }
+  return (
+      <div>
+          <h1>Todo</h1>
+          
+          <input
+            value = {state.job}
+            placeholder="Enter here..."
+            onChange={e=>{
+              dispatch(setJob(e.target.value))
+            }}
+            ref = {inputRef}
+          ></input>
+          <button onClick={handleSubmit}>add</button>
+
+          <ul>
+            {state.jobs.map((job,index)=>{
+              return <li style={{padding:"20px"}} key={index}>{job} 
+              <span onClick={()=>{
+                dispatch(removeJob(index))
+              }}>&times;</span> <button onClick={()=>{
+                inputRef.current.value = job
+                dispatch(updateJob(index))
+              }}>Sua</button> </li>
+            })}
+          </ul>
+      </div>
+  )
+}
+
+export default Content
+
+8. useContext
